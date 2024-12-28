@@ -19,7 +19,16 @@ if ( ! defined( '_S_VERSION' ) ) {
  * runs before the init hook. The init hook is too late for some features, such
  * as indicating support for post thumbnails.
  */
-function jm_theme_setup() {
+
+// functions.php
+function my_theme_setup() {
+    register_nav_menus(array(
+        'primary' => __('Primary Menu', 'text_domain'),
+    ));
+}
+add_action('after_setup_theme', 'my_theme_setup');
+
+ function jm_theme_setup() {
 	/*
 		* Make theme available for translation.
 		* Translations can be filed in the /languages/ directory.
@@ -114,6 +123,7 @@ function jm_theme_content_width() {
 }
 add_action( 'after_setup_theme', 'jm_theme_content_width', 0 );
 
+
 /**
  * Register widget area.
  *
@@ -149,6 +159,166 @@ function jm_theme_scripts() {
 }
 add_action( 'wp_enqueue_scripts', 'jm_theme_scripts' );
 
+/** Enqueuing ajax-load.js in functions.php */
+function jm_enqueue_scripts() {
+    // Enqueue theme's JavaScript
+    wp_enqueue_script('ajax-load', get_template_directory_uri() . '/js/ajax-load.js', array('jquery'), null, true);
+
+    // Localize script with AJAX URL and parameters
+    wp_localize_script('ajax-load', 'jm_ajax_params', array(
+        'ajax_url' => admin_url('admin-ajax.php'),
+        'posts_per_page' => get_option('posts_per_page'),
+        'max_page' => wp_count_posts()->publish / get_option('posts_per_page'),
+    ));
+}
+add_action('wp_enqueue_scripts', 'jm_enqueue_scripts');
+
+/** Enqueuing ajax-load.js in functions.php */
+
+/** Modify functions.php to Handle AJAX Requests: */
+
+function jm_load_more_posts() {
+    // Get the page number from the AJAX request
+    $paged = isset($_POST['page']) ? intval($_POST['page']) : 1;
+
+    // Query the posts
+    $query = new WP_Query(array(
+        'post_type' => 'post',
+        'posts_per_page' => get_option('posts_per_page'),
+        'paged' => $paged,
+    ));
+
+    // Generate the posts HTML
+    if ($query->have_posts()) {
+        while ($query->have_posts()) {
+            $query->the_post();
+            // Use your existing post template part
+            get_template_part('template-parts/content', get_post_format());
+        }
+    } else {
+        echo 'no_more_posts';
+    }
+
+    wp_reset_postdata();
+    wp_die();
+}
+add_action('wp_ajax_load_more_posts', 'jm_load_more_posts');
+add_action('wp_ajax_nopriv_load_more_posts', 'jm_load_more_posts');
+
+/** Modify functions.php to Handle AJAX Requests: */
+
+
+/** Add Theme Setting for Font Color */
+
+function jm_customize_register($wp_customize) {
+    // Add Font Color Setting
+    $wp_customize->add_setting('jm_font_color', array(
+        'default' => '#000000',
+        'sanitize_callback' => 'sanitize_hex_color',
+    ));
+    $wp_customize->add_control(new WP_Customize_Color_Control($wp_customize, 'jm_font_color', array(
+        'label' => 'Font Color',
+        'section' => 'colors',
+        'settings' => 'jm_font_color',
+    )));
+}
+add_action('customize_register', 'jm_customize_register');
+
+/** Add dynamic css*/
+
+function jm_dynamic_styles() {
+    $font_color = get_theme_mod('jm_font_color', '#000000'); // Default to black
+    ?>
+    <style type="text/css">
+        body {
+            color: <?php echo esc_attr($font_color); ?>;
+        }
+    </style>
+    <?php
+}
+add_action('wp_head', 'jm_dynamic_styles');
+
+
+/** Add Theme Setting for Font Color */
+
+/** Rating Feature For Admins in pages */
+
+function jm_add_rating_meta_box() {
+    add_meta_box(
+        'jm_rating_meta_box',
+        'Page Rating (Stars)',
+        'jm_display_star_rating_meta_box',
+        'page',
+        'side',
+        'high'
+    );
+}
+add_action('add_meta_boxes', 'jm_add_rating_meta_box');
+
+function jm_display_star_rating_meta_box($post) {
+    // Get the current rating value
+    $rating = get_post_meta($post->ID, '_jm_page_rating', true);
+    ?>
+    <div id="jm-star-rating">
+        <?php for ($i = 1; $i <= 5; $i++) : ?>
+            <span class="jm-star <?php echo ($i <= $rating) ? 'selected' : ''; ?>" data-value="<?php echo $i; ?>">&#9733;</span>
+        <?php endfor; ?>
+    </div>
+    <input type="hidden" name="jm_page_rating" id="jm_page_rating" value="<?php echo esc_attr($rating); ?>">
+    <style>
+        #jm-star-rating {
+            cursor: pointer;
+        }
+        .jm-star {
+            font-size: 20px;
+            color: #ccc;
+            transition: color 0.3s ease;
+        }
+        .jm-star.selected {
+            color: gold;
+        }
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const stars = document.querySelectorAll('#jm-star-rating .jm-star');
+            const input = document.getElementById('jm_page_rating');
+
+            stars.forEach(star => {
+                star.addEventListener('click', function () {
+                    const value = this.getAttribute('data-value');
+                    input.value = value;
+
+                    // Highlight stars
+                    stars.forEach(s => {
+                        s.classList.remove('selected');
+                        if (s.getAttribute('data-value') <= value) {
+                            s.classList.add('selected');
+                        }
+                    });
+                });
+            });
+        });
+    </script>
+    <?php
+}
+
+/** Now Save Rating Meta Field */
+
+
+function jm_save_page_rating($post_id) {
+    if (array_key_exists('jm_page_rating', $_POST)) {
+        update_post_meta($post_id, '_jm_page_rating', intval($_POST['jm_page_rating']));
+    }
+}
+add_action('save_post', 'jm_save_page_rating');
+
+
+
+/** Now Save Rating Meta Field */
+
+
+/** Rating Feature For Admins in pages */
+
 /**
  * Implement the Custom Header feature.
  */
@@ -175,4 +345,7 @@ require get_template_directory() . '/inc/customizer.php';
 if ( defined( 'JETPACK__VERSION' ) ) {
 	require get_template_directory() . '/inc/jetpack.php';
 }
+
+
+
 

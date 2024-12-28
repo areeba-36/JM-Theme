@@ -78,7 +78,8 @@ html {
  * Remove the margin in all browsers.
  */
 body {
-	margin: 0;
+	margin: auto;
+	max-width: 1200px;
 }
 
 /**
@@ -689,7 +690,9 @@ textarea {
 }
 
 .main-navigation li {
-	position: relative;
+	padding: 10px;
+    position: relative;
+    color: black;
 }
 
 .main-navigation a {
@@ -747,10 +750,10 @@ textarea {
 	display: block;
 }
 
-.post,
+/* .post,
 .page {
 	margin: 0 0 1.5em;
-}
+} */
 
 .updated:not(.published) {
 	display: none;
@@ -966,4 +969,49 @@ textarea {
 	margin-left: auto;
 	margin-right: auto;
 	margin-bottom: 1.5em;
+}
+#main {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 20px; 
+	margin: 20px auto;
+}
+
+#main article {
+    background: #f9f9f9;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+/* style.css */
+.site-header {
+	display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 0 auto;
+	background-color: #ffffff;
+    padding: 20px;
+}
+.site-branding {
+    width: 30%;
+    display: flex;
+}
+p.site-title > a {
+    font-size: 20px;
+    text-decoration: none;
+    color: black;
+}
+
+.page-rating .star {
+	font-size: 24px;
+	color: #ccc;
+}
+.page-rating .star.filled {
+	color: gold;
+}
+.site-footer {
+    background: white;
+    padding: 50px 10px;
+    text-align: center;
 }

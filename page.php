@@ -29,7 +29,20 @@ get_header();
 			endif;
 
 		endwhile; // End of the loop.
+
+
+$rating = get_post_meta(get_the_ID(), '_jm_page_rating', true);
+if ($rating) {
+    echo '<div class="page-rating">';
+    for ($i = 1; $i <= 5; $i++) {
+        echo '<span class="star ' . ($i <= $rating ? 'filled' : '') . '">&#9733;</span>';
+    }
+    echo '</div>';
+} else {
+    echo '<p>No rating has been assigned to this page.</p>';
+}
 		?>
+
 
 	</main><!-- #main -->
 
